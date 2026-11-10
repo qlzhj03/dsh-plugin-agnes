@@ -1,6 +1,6 @@
 # Agnes Studio for DSH
 
-简体中文（默认） · [English](README.en.md)
+简体中文 · [English](README.en.md)
 
 面向 [Agnes AI API](https://www.agnes-ai.cn/zh-Hans/docs/overview) 的 DSH（DeepSeekRuntime）Web 持久化插件。
 

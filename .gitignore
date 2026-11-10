@@ -4,6 +4,5 @@ coverage/
 .DS_Store
 
 # Local test outputs from Agnes media generation
-/generated_bakery.png
-/generated_bakery_v2.png
-/three_glasses_orange_cat.png
+*.png
+

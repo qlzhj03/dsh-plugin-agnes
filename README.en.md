@@ -1,6 +1,6 @@
 # Agnes Studio for DSH
 
-[简体中文](README.md) · English (default: Chinese)
+[简体中文](README.md) · English
 
 A persistent DSH (DeepSeekRuntime) web plugin for the [Agnes AI API](https://www.agnes-ai.cn/zh-Hans/docs/overview).
 
