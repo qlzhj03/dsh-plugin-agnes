@@ -2,7 +2,19 @@
   "name": "@local/dsh-agnes-studio",
   "version": "1.0.0",
   "private": true,
-  "description": "Agnes text, image, and video generation with in-chat previews and a persistent media history.",
+  "description": "Free Agnes text, image, and video generation plugin for DSH with in-chat previews and persistent media history.",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-runtime",
+    "agnes",
+    "agnes-ai",
+    "ai-plugin",
+    "text-to-image",
+    "text-to-video",
+    "image-generation",
+    "video-generation"
+  ],
   "type": "module",
   "repository": {
     "type": "git",

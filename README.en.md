@@ -2,14 +2,16 @@
 
 [简体中文](README.md) · English
 
+**Free Agnes text, image, and video generation, wrapped in one DSH plugin.**
+
 A persistent DSH (DeepSeekRuntime) web plugin for the [Agnes AI API](https://www.agnes-ai.cn/zh-Hans/docs/overview).
 
-- One `agnes_studio` tool for text, image, and video generation.
+- **Free generation**: one `agnes_studio` tool covers text, images, and video, sharing a single API key.
 - Rich in-chat previews for generated images, videos, and text.
 - A persistent **Agnes works** page in the left sidebar for browsing, downloading, and deleting generated media.
 - Vague requests use the native question UI for the missing subject/usage while suggesting image ratios/detail or video duration/resolution; no extra card is shown and no subject is invented.
 - **Settings → Agnes Studio** contains only the model connection and text/image/video model mapping, using DSH's official **Settings → Models** custom-provider configuration.
-- Text, image, and video generation share one API key. The key is stored as a DSH credential and never enters the browser bundle or generated client code.
+- The key is stored as a DSH credential and never enters the browser bundle or generated client code.
 - Generated media is downloaded into the active DSH profile's `agnes-studio/` directory and served through a same-origin Host route without exposing filesystem paths.
 
 ## Installation
@@ -21,7 +23,7 @@ The plugin installs as a DSH profile bundle through the Web **Plugins** page or 
 1. Open **Plugins** in the DSH sidebar, then **Add plugin** → **Install a third-party plugin**.
 2. Enter the repository address `git+https://github.com/qlzhj03/dsh-plugin-agnes.git` and choose **Install**.
 3. Choose **Enable now** when installation finishes; restart DSH if prompted.
-4. Open **Settings → Agnes Studio**, choose **Create Agnes provider**, then paste the API key under **Settings → Models → Agnes**.
+4. Open **Settings → Agnes Studio**, choose **Create Agnes provider**, then paste the API key under **Settings → Models → Agnes** (create one at [Agnes Platform → Settings → API Keys](https://platform.agnes-ai.cn/settings/apiKeys)).
 
 Alternatively, run:
 
@@ -56,7 +58,7 @@ On first use, open **Settings → Agnes Studio**. If no Agnes provider exists, c
 
 The provider catalog lists only the text model so DSH's model picker shows a usable chat model. Image and video model IDs stay in Agnes Studio's model mapping below.
 
-Then open **Settings → Models → Agnes** and paste the API key from the Agnes platform console. The same key is used for text, image, and video; there is no separate key field in the Agnes Studio page. The plugin also accepts `AGNES_API_KEY` from the Host environment when no stored credential exists.
+Then open **Settings → Models → Agnes** and paste the API key created at [Agnes Platform → Settings → API Keys](https://platform.agnes-ai.cn/settings/apiKeys). The same key is used for text, image, and video; there is no separate key field in the Agnes Studio page. The plugin also accepts `AGNES_API_KEY` from the Host environment when no stored credential exists.
 
 The model mapping in **Settings → Agnes Studio** defaults to:
 

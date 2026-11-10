@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Agnes Studio",
-    "description": "Generate text, images, and videos from ordinary chat with a shared DSH Models API key, preview results inline, and browse persistent media history."
+    "title": "Agnes Studio (DSH Plugin)",
+    "description": "Free Agnes text, image, and video generation plugin for DSH — one tool, in-chat previews, and persistent media history."
   }
 }
