@@ -8,7 +8,7 @@ A persistent DSH (DeepSeekRuntime) web plugin for the [Agnes AI API](https://www
 
 - **Free generation**: one `agnes_studio` tool covers text, images, and video, sharing a single API key.
 - Rich in-chat previews for generated images, videos, and text.
-- A persistent **Agnes works** page in the left sidebar for browsing, downloading, and deleting generated media.
+- A persistent **Agnes Studio** page in the left sidebar for browsing, downloading, and deleting generated media.
 - Vague requests use the native question UI for the missing subject/usage while suggesting image ratios/detail or video duration/resolution; no extra card is shown and no subject is invented.
 - **Settings → Agnes Studio** contains only the model connection and text/image/video model mapping, using DSH's official **Settings → Models** custom-provider configuration.
 - The key is stored as a DSH credential and never enters the browser bundle or generated client code.
@@ -80,7 +80,7 @@ Ask naturally, for example:
 - “用 Agnes 写一段产品发布会开场文案。”
 - “看看我之前生成的图片。”
 
-The plugin adds model-facing guidance so image and video requests invoke `agnes_studio` automatically, without opening Settings or naming the tool. Ordinary conversation stays with the assistant; the Agnes text action is used only when you explicitly ask for an Agnes text completion. Results render directly in the conversation and are saved to the **Agnes works** page, opened from the left sidebar.
+The plugin adds model-facing guidance so image and video requests invoke `agnes_studio` automatically, without opening Settings or naming the tool. Ordinary conversation stays with the assistant; the Agnes text action is used only when you explicitly ask for an Agnes text completion. Results render directly in the conversation and are saved to the **Agnes Studio** page, opened from the left sidebar.
 
 ### Vague requests
 

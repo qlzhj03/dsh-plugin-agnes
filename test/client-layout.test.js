@@ -59,13 +59,13 @@ async function loadClient() {
   };
 }
 
-test('registers a left-sidebar Agnes works page', async () => {
+test('registers a left-sidebar Agnes Studio page', async () => {
   const { registration } = await loadClient();
   const sidebar = registration('sidebar.panellist');
   const main = registration('main');
 
   assert.equal(sidebar.options.id, 'agnes-studio');
-  assert.equal(sidebar.options.label(), 'Agnes 作品');
+  assert.equal(sidebar.options.label(), 'Agnes 创作台');
   assert.equal(main.options.key, sidebar.options.id);
 });
 

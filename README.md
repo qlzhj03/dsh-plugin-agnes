@@ -1,4 +1,4 @@
-# Agnes Studio for DSH
+# Agnes 创作台 for DSH
 
 简体中文 · [English](README.en.md)
 
@@ -8,9 +8,9 @@
 
 - **免费生成**：只需一个 `agnes_studio` 工具，即可统一完成文本、图片与视频生成，三者共用同一把 API Key。
 - 生成结果（图片、视频、文本）直接在对话中渲染预览。
-- 左侧边栏提供常驻的 **Agnes 作品** 页面，可浏览、下载和删除已生成的媒体。
+- 左侧边栏提供常驻的 **Agnes 创作台** 页面，可浏览、下载和删除已生成的媒体。
 - 需求模糊时直接使用对话底部的原生提问收集主体/用途，同时给出推荐比例/清晰度或时长/分辨率，不展示额外卡片，也不凭空生成。
-- **设置 → Agnes Studio** 只包含模型连接与文本/图片/视频模型映射，复用 DSH 官方 **设置 → 模型** 的自定义供应商配置。
+- **设置 → Agnes 创作台** 只包含模型连接与文本/图片/视频模型映射，复用 DSH 官方 **设置 → 模型** 的自定义供应商配置。
 - 密钥保存为 DSH 凭据，不会进入浏览器 bundle 或生成的客户端代码。
 - 生成的媒体会下载到当前 DSH profile 的 `agnes-studio/` 目录，并通过同源 Host 路由访问，不暴露文件系统路径。
 
@@ -23,7 +23,7 @@
 1. 在 DSH 侧边栏打开 **插件**，点 **添加插件** → **安装第三方插件**。
 2. 填入仓库地址 `git+https://github.com/qlzhj03/dsh-plugin-agnes.git`，点 **安装**。
 3. 安装完成后点 **立即启用**；如果提示需要重启，重启 DSH。
-4. 打开 **设置 → Agnes Studio**，点 **创建 Agnes 供应商**，再到 **设置 → 模型 → Agnes** 填入 API Key（在 [Agnes 平台 → 设置 → API Keys](https://platform.agnes-ai.cn/settings/apiKeys) 创建）。
+4. 打开 **设置 → Agnes 创作台**，点 **创建 Agnes 供应商**，再到 **设置 → 模型 → Agnes** 填入 API Key（在 [Agnes 平台 → 设置 → API Keys](https://platform.agnes-ai.cn/settings/apiKeys) 创建）。
 
 也可以在终端执行：
 
@@ -45,7 +45,7 @@ pnpm pack
 
 ## 配置
 
-首次使用时打开 **设置 → Agnes Studio**。如果尚无 Agnes 供应商，点击 **创建 Agnes 供应商**。该操作会在 DSH 的 **设置 → 模型** 页面创建一个名为 `agnes` 的自定义模型供应商：
+首次使用时打开 **设置 → Agnes 创作台**。如果尚无 Agnes 供应商，点击 **创建 Agnes 供应商**。该操作会在 DSH 的 **设置 → 模型** 页面创建一个名为 `agnes` 的自定义模型供应商：
 
 | 字段 | 值 |
 | --- | --- |
@@ -56,11 +56,11 @@ pnpm pack
 | 上下文窗口 | `512000` |
 | 最大输出 | `65536` |
 
-供应商目录只登记文本模型，这样 DSH 的模型选择器中会出现可用的对话模型；图片与视频模型 ID 则保留在下面的 Agnes Studio 模型映射中。
+供应商目录只登记文本模型，这样 DSH 的模型选择器中会出现可用的对话模型；图片与视频模型 ID 则保留在下面的 Agnes 创作台模型映射中。
 
-然后打开 **设置 → 模型 → Agnes**，粘贴 [Agnes 平台 → 设置 → API Keys](https://platform.agnes-ai.cn/settings/apiKeys) 中创建的 API Key。文本、图片、视频共用这一把 Key，Agnes Studio 页面不单独提供 Key 输入框。若 Host 环境变量中存在 `AGNES_API_KEY` 且没有已保存的凭据，插件也会使用它。
+然后打开 **设置 → 模型 → Agnes**，粘贴 [Agnes 平台 → 设置 → API Keys](https://platform.agnes-ai.cn/settings/apiKeys) 中创建的 API Key。文本、图片、视频共用这一把 Key，Agnes 创作台页面不单独提供 Key 输入框。若 Host 环境变量中存在 `AGNES_API_KEY` 且没有已保存的凭据，插件也会使用它。
 
-**设置 → Agnes Studio** 中的模型映射默认值：
+**设置 → Agnes 创作台** 中的模型映射默认值：
 
 | 设置项 | 默认值 |
 | --- | --- |
@@ -80,7 +80,7 @@ pnpm pack
 - “用 Agnes 写一段产品发布会开场文案。”
 - “看看我之前生成的图片。”
 
-插件会向模型注入使用指引，图片与视频请求会自动调用 `agnes_studio`，无需打开设置或点名工具。普通对话仍交给助手处理；只有当你明确要求用 Agnes 做文本生成时，才会走 Agnes 文本能力。结果直接渲染在对话里，并保存到左侧边栏的 **Agnes 作品** 页面。
+插件会向模型注入使用指引，图片与视频请求会自动调用 `agnes_studio`，无需打开设置或点名工具。普通对话仍交给助手处理；只有当你明确要求用 Agnes 做文本生成时，才会走 Agnes 文本能力。结果直接渲染在对话里，并保存到左侧边栏的 **Agnes 创作台** 页面。
 
 ### 模糊需求
 

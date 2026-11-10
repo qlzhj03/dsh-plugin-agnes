@@ -318,7 +318,7 @@ test('sidebar gallery page lists saved works and can return to chat', async () =
   await flush();
   rendered = runtime.render(main.component, {});
 
-  assert.match(rendered.text, /Agnes 作品/);
+  assert.match(rendered.text, /Agnes 创作台/);
   assert.match(rendered.text, /A bakery storefront/);
   const back = flattenNodes(rendered.tree, (node) => node.props?.onClick && node.props?.children?.[0] === '返回对话');
   assert.equal(back.length, 1);
