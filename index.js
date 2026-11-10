@@ -5,6 +5,7 @@ import { DshModelProviders, DEFAULT_PROVIDER_ID } from './lib/dsh-models.js';
 
 const TOOL_NAME = 'agnes_studio';
 const ROUTE_PREFIX = '/api/agnes-studio';
+const API_KEYS_URL = 'https://platform.agnes-ai.cn/settings/apiKeys';
 const TOOL_GUIDANCE = [
   'Use the agnes_studio tool automatically when the user asks to create, generate, draw, edit, or animate an image or video, even without naming Agnes or this tool. Call it with action: "image" or action: "video" instead of only describing the result.',
   'Do not invent a missing subject. When an image or video request only gives a format or mood (for example "画个图", "做个海报", "来段视频", or "generate an image"), call the tool with the user\'s wording: it returns a clarification result with suggested presets instead of generating. That result has no separate UI card; do not describe a card. Ask only for the missing subject or edit instruction through ask_user_question (the native question UI), mention the recommended specs in the question, use them unless the user wants to change them, and wait for the answer.',
@@ -84,6 +85,7 @@ async function configView(studio, models) {
     storageRoot: studio.root(),
     maxHistory: 500,
     docsUrl: 'https://www.agnes-ai.cn/zh-Hans/docs/overview',
+    apiKeysUrl: API_KEYS_URL,
   };
 }
 

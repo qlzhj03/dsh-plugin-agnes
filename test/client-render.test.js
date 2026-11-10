@@ -257,6 +257,52 @@ test('settings section renders model configuration without create or history tab
   assert.deepEqual(optionIds[0], ['agnes-2.5-flash', 'agnes-3.0-flash']);
   assert.deepEqual(optionIds[1], ['agnes-image-2.1-flash', 'agnes-image-2.5-flash']);
   assert.deepEqual(optionIds[2], ['agnes-video-2.5', 'agnes-video-2.5-flash']);
+  assert.equal(
+    flattenNodes(rendered.tree, (node) => node.type === 'a' && node.props?.href === 'https://platform.agnes-ai.cn/settings/apiKeys').length,
+    0,
+    'a configured provider needs no API key hint',
+  );
+});
+
+test('settings section shows where to get an API key while unconfigured', async () => {
+  const { runtime, registration } = await loadClient();
+  const unconfiguredFixture = {
+    configured: false,
+    config: {
+      providerId: 'agnes',
+      textModel: 'agnes-3.0-flash',
+      imageModel: 'agnes-image-2.5-flash',
+      videoModel: 'agnes-video-2.5-flash',
+    },
+    connection: {
+      reason: 'key-missing',
+      provider: {
+        id: 'agnes',
+        displayName: 'Agnes',
+        apiKeyEnv: 'AGNES_API_KEY',
+        baseUrl: 'https://api.agnes-ai.cn/v1',
+      },
+      providers: [],
+    },
+    setup: { canCreate: false },
+    apiKeysUrl: 'https://platform.agnes-ai.cn/settings/apiKeys',
+  };
+  globalThis.fetch = async (url) => {
+    assert.match(String(url), /\/api\/agnes-studio\/config$/);
+    return { ok: true, status: 200, json: async () => unconfiguredFixture };
+  };
+
+  const section = registration('settings.section');
+  let rendered = runtime.render(section.component, {});
+  for (const effect of rendered.effects()) effect();
+  await flush();
+  rendered = runtime.render(section.component, {});
+
+  const links = flattenNodes(rendered.tree, (node) => node.type === 'a' && node.props?.href === 'https://platform.agnes-ai.cn/settings/apiKeys');
+  assert.equal(links.length, 1, 'the missing-key state links to the Agnes API keys page');
+  assert.equal(links[0].props.target, '_blank');
+  assert.match(rendered.text, /还没有 API Key/);
+  assert.match(rendered.text, /前往获取 API Key/);
 });
 
 test('sidebar gallery page lists saved works and can return to chat', async () => {

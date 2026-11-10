@@ -45,6 +45,7 @@ async function loadToolView() {
     'tool.prompt': '提示词',
     'tool.model': '模型',
     'tool.saved': '已保存到 Agnes 历史',
+    'setup.getKeyHere': '在这里获取 API Key：',
   };
   const locale = {
     register() {},
@@ -146,4 +147,24 @@ test('a clarification result renders no separate UI card', async () => {
   });
 
   assert.equal(flattenText(tree), '');
+});
+
+test('a missing-key failure links to the Agnes API keys page', async () => {
+  const ToolView = await loadToolView();
+  const tree = ToolView({
+    phase: 'result',
+    block: {
+      kind: 'tool-result',
+      callId: 'call-3',
+      name: 'agnes_studio',
+      isError: true,
+      content: [{ type: 'text', text: 'Agnes API key is not configured' }],
+    },
+    toolName: 'agnes_studio',
+    __ctx: {},
+  });
+  const text = flattenText(tree);
+
+  assert.match(text, /在这里获取 API Key/);
+  assert.match(text, /https:\/\/platform\.agnes-ai\.cn\/settings\/apiKeys/);
 });

@@ -6,6 +6,7 @@ window.__ModuleLoader__.load({
     const NS = 'agnesStudio';
     const API = '/api/agnes-studio';
     const PANEL_ID = 'agnes-studio';
+    const API_KEYS_URL = 'https://platform.agnes-ai.cn/settings/apiKeys';
 
     const DICTS = {
       en: {
@@ -78,6 +79,10 @@ window.__ModuleLoader__.load({
         'setup.unavailable': 'DSH model settings are unavailable in this profile.',
         'setup.readonly': 'DSH model settings are read-only in this profile.',
         'setup.openModels': 'Open DSH Settings → Models, select this provider, and add its API Key:',
+        'setup.getKeyTitle': 'No API key yet?',
+        'setup.getKeyBody': 'Create a key on the Agnes platform, then paste it into DSH Settings → Models → Agnes.',
+        'setup.getKeyAction': 'Get an API key',
+        'setup.getKeyHere': 'Get an API key here:',
         'setup.refresh': 'Refresh status',
         'settings.title': 'DSH model connection',
         'settings.connection': 'DSH model provider',
@@ -181,6 +186,10 @@ window.__ModuleLoader__.load({
         'setup.unavailable': '当前 profile 无法访问 DSH 模型设置。',
         'setup.readonly': '当前 profile 的 DSH 模型设置只读。',
         'setup.openModels': '打开 DSH 设置 → 模型，选择该提供商并填写 API Key：',
+        'setup.getKeyTitle': '还没有 API Key？',
+        'setup.getKeyBody': '在 Agnes 平台 → 设置 → API Keys 创建并复制 Key，再填入 DSH 设置 → 模型 → Agnes。',
+        'setup.getKeyAction': '前往获取 API Key',
+        'setup.getKeyHere': '在这里获取 API Key：',
         'setup.refresh': '刷新状态',
         'settings.title': 'DSH 模型连接',
         'settings.connection': 'DSH 模型提供商',
@@ -300,6 +309,8 @@ window.__ModuleLoader__.load({
 .as-kv dd{margin:0;overflow-wrap:anywhere;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .as-link{color:var(--dsw-alias-brand-primary);text-decoration:none}
 .as-link:hover{text-decoration:underline}
+.as-keyhelp{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid color-mix(in srgb,var(--dsw-alias-brand-primary) 30%,var(--dsw-alias-border-l1));background:color-mix(in srgb,var(--dsw-alias-brand-primary) 6%,transparent);border-radius:10px;padding:10px 12px}
+.as-keyhelp-text{display:grid;gap:2px;flex:1;min-width:200px;font-size:12px;line-height:18px}
 .as-tool{border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-layer-1);padding:12px;display:grid;gap:10px;max-width:720px;min-width:0}
 .as-tool-head{display:flex;align-items:center;gap:8px;min-width:0}
 .as-tool-title{font-size:12px;font-weight:600;flex:1}
@@ -396,6 +407,24 @@ window.__ModuleLoader__.load({
     function ErrorText({ children }) {
       if (!children) return null;
       return h('div', { className: 'as-error', role: 'alert' }, children);
+    }
+
+    function apiKeysUrl(config) {
+      const value = typeof config?.apiKeysUrl === 'string' ? config.apiKeysUrl.trim() : '';
+      return value === '' ? API_KEYS_URL : value;
+    }
+
+    function KeyHelp({ t, config }) {
+      return h('div', { className: 'as-keyhelp' },
+        h('div', { className: 'as-keyhelp-text' },
+          h('strong', null, t('setup.getKeyTitle')),
+          h('span', { className: 'as-note' }, t('setup.getKeyBody'))),
+        h('a', {
+          className: 'as-btn small',
+          href: apiKeysUrl(config),
+          target: '_blank',
+          rel: 'noreferrer',
+        }, t('setup.getKeyAction')));
     }
 
     function Spinner() {
@@ -521,7 +550,9 @@ window.__ModuleLoader__.load({
           setupNeeded ? h('div', { className: 'as-steps' },
             h('div', null, t('setup.body')),
             h('div', null, t('setup.openModels')),
-            h('code', { className: 'as-code' }, 'agnes → AGNES_API_KEY')) : null));
+            h('code', { className: 'as-code' }, 'agnes → AGNES_API_KEY'),
+            h('div', null, t('setup.getKeyHere'), ' ',
+              h('a', { className: 'as-link', href: API_KEYS_URL, target: '_blank', rel: 'noreferrer' }, API_KEYS_URL))) : null));
       }
       const meta = block.meta;
       if (meta?.studio !== 'agnes') {
@@ -743,6 +774,7 @@ window.__ModuleLoader__.load({
           h('div', { className: 'as-banner', style: { background: 'transparent', borderColor: 'var(--dsw-alias-border-l1)' } },
             h('span', { className: `as-dot${config?.configured ? ' ok' : ''}` }),
             h('span', null, statusText)),
+          reason === 'provider-missing' || reason === 'key-missing' ? h(KeyHelp, { t, config }) : null,
           reason === 'provider-missing' ? h('div', null,
             h('div', { className: 'as-note' }, t('setup.body')),
             canCreate ? h('div', { className: 'as-actions' },
