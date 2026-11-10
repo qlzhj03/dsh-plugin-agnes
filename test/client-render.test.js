@@ -164,9 +164,9 @@ const configFixture = {
   configured: true,
   config: {
     providerId: 'agnes',
-    textModel: 'agnes-2.5-flash',
+    textModel: 'agnes-3.0-flash',
     imageModel: 'agnes-image-2.5-flash',
-    videoModel: 'agnes-video-2.5',
+    videoModel: 'agnes-video-2.5-flash',
   },
   connection: {
     reason: 'ready',
@@ -185,6 +185,19 @@ const configFixture = {
     }],
   },
   setup: { canCreate: false, canEdit: true },
+};
+
+const modelsFixture = {
+  ok: true,
+  baseUrl: 'https://api.agnes-ai.cn/v1',
+  models: [
+    { id: 'agnes-2.5-flash' },
+    { id: 'agnes-3.0-flash' },
+    { id: 'agnes-image-2.1-flash' },
+    { id: 'agnes-image-2.5-flash' },
+    { id: 'agnes-video-2.5' },
+    { id: 'agnes-video-2.5-flash' },
+  ],
 };
 
 const historyFixture = {
@@ -208,12 +221,19 @@ async function flush() {
 test('settings section renders model configuration without create or history tabs', async () => {
   const { runtime, registration } = await loadClient();
   globalThis.fetch = async (url) => {
-    assert.match(String(url), /\/api\/agnes-studio\/config$/);
+    const target = String(url);
+    if (target.endsWith('/models')) {
+      return { ok: true, status: 200, json: async () => modelsFixture };
+    }
+    assert.match(target, /\/api\/agnes-studio\/config$/);
     return { ok: true, status: 200, json: async () => configFixture };
   };
 
   const section = registration('settings.section');
   let rendered = runtime.render(section.component, {});
+  for (const effect of rendered.effects()) effect();
+  await flush();
+  rendered = runtime.render(section.component, {});
   for (const effect of rendered.effects()) effect();
   await flush();
   rendered = runtime.render(section.component, {});
@@ -225,6 +245,18 @@ test('settings section renders model configuration without create or history tab
   assert.match(rendered.text, /视频模型/);
   assert.doesNotMatch(rendered.text, /历史存储位置/);
   assert.doesNotMatch(rendered.text, /Agnes API 文档/);
+
+  const selects = flattenNodes(rendered.tree, (node) => node.type === 'select');
+  assert.equal(selects.length, 3, 'only the three model fields use dropdowns');
+  assert.deepEqual(selects.map((node) => node.props.value), [
+    'agnes-3.0-flash',
+    'agnes-image-2.5-flash',
+    'agnes-video-2.5-flash',
+  ]);
+  const optionIds = selects.map((node) => flattenNodes(node, (child) => child.type === 'option').map((option) => option.props.value));
+  assert.deepEqual(optionIds[0], ['agnes-2.5-flash', 'agnes-3.0-flash']);
+  assert.deepEqual(optionIds[1], ['agnes-image-2.1-flash', 'agnes-image-2.5-flash']);
+  assert.deepEqual(optionIds[2], ['agnes-video-2.5', 'agnes-video-2.5-flash']);
 });
 
 test('sidebar gallery page lists saved works and can return to chat', async () => {

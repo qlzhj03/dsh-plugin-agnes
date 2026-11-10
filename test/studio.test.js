@@ -3,7 +3,7 @@ import { access, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { AgnesStudio } from '../lib/studio.js';
+import { AgnesStudio, DEFAULT_CONFIG } from '../lib/studio.js';
 
 const PNG_BYTES = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64');
 const MP4_BYTES = Buffer.from('00000018667479706d703432000000006d70343269736f6d', 'hex');
@@ -57,9 +57,9 @@ test('AgnesStudio generates text, image, and video and persists history/media', 
     sleep: async () => {},
     defaultConfig: {
       baseUrl: 'http://mock.local/v1',
-      textModel: 'agnes-2.5-flash',
+      textModel: 'agnes-3.0-flash',
       imageModel: 'agnes-image-2.5-flash',
-      videoModel: 'agnes-video-2.5',
+      videoModel: 'agnes-video-2.5-flash',
     },
   });
 
@@ -136,7 +136,7 @@ test('AgnesStudio validates configuration and reports API failures', async () =>
   });
   try {
     await assert.rejects(
-      studio.generate({ action: 'image', prompt: 'x' }),
+      studio.generate({ action: 'image', prompt: 'a blue cube' }),
       /API key is not configured/,
     );
     await assert.rejects(studio.saveConfig({ baseUrl: 'file:///tmp/nope' }), /http or https/);
@@ -158,9 +158,9 @@ test('AgnesStudio prefers the DSH model provider base URL over the legacy file v
     fetchImpl: createMockFetch(calls),
     defaultConfig: {
       baseUrl: 'https://api.agnes-ai.cn/v1',
-      textModel: 'agnes-2.5-flash',
+      textModel: 'agnes-3.0-flash',
       imageModel: 'agnes-image-2.5-flash',
-      videoModel: 'agnes-video-2.5',
+      videoModel: 'agnes-video-2.5-flash',
     },
   });
   try {
@@ -170,4 +170,54 @@ test('AgnesStudio prefers the DSH model provider base URL over the legacy file v
   } finally {
     await rm(root, { recursive: true, force: true });
   }
+});
+
+test('AgnesStudio lists and normalizes the provider model catalog', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'agnes-studio-test-'));
+  const calls = [];
+  const studio = new AgnesStudio({
+    rootDir: root,
+    readApiKey: async () => 'test-key',
+    fetchImpl: async (url, init = {}) => {
+      calls.push({ url: String(url), init });
+      return jsonResponse({
+        object: 'list',
+        data: [
+          { id: 'agnes-video-2.5', object: 'model' },
+          { id: 'agnes-3.0-flash', name: 'Agnes 3.0 Flash' },
+          { id: 'agnes-3.0-flash' },
+          { id: 'agnes-2.5-pro-theta', supported_endpoint_types: [] },
+          { name: 'missing id' },
+          { id: '  agnes-image-2.5-flash  ' },
+        ],
+      });
+    },
+    defaultConfig: {
+      baseUrl: 'http://mock.local/v1',
+      textModel: 'agnes-3.0-flash',
+      imageModel: 'agnes-image-2.5-flash',
+      videoModel: 'agnes-video-2.5-flash',
+    },
+  });
+  try {
+    const result = await studio.listModels();
+    assert.equal(result.baseUrl, 'http://mock.local/v1');
+    assert.deepEqual(result.models, [
+      { id: 'agnes-3.0-flash', name: 'Agnes 3.0 Flash' },
+      { id: 'agnes-image-2.5-flash' },
+      { id: 'agnes-video-2.5' },
+    ]);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].url, 'http://mock.local/v1/models');
+    assert.equal(calls[0].init.method, 'GET');
+    assert.equal(calls[0].init.headers.Authorization, 'Bearer test-key');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('ships the install defaults for text, image, and video models', () => {
+  assert.equal(DEFAULT_CONFIG.textModel, 'agnes-3.0-flash');
+  assert.equal(DEFAULT_CONFIG.imageModel, 'agnes-image-2.5-flash');
+  assert.equal(DEFAULT_CONFIG.videoModel, 'agnes-video-2.5-flash');
 });

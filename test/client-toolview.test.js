@@ -121,3 +121,29 @@ test('an in-flight tool call still renders the running state', async () => {
 
   assert.match(flattenText(tree), /正在调用 Agnes/);
 });
+
+test('a clarification result renders no separate UI card', async () => {
+  const ToolView = await loadToolView();
+  const tree = ToolView({
+    phase: 'result',
+    block: {
+      kind: 'tool-result',
+      callId: 'call-2',
+      name: 'agnes_studio',
+      isError: false,
+      content: [{ type: 'text', text: 'Agnes needs more detail.' }],
+      meta: {
+        studio: 'agnes',
+        action: 'clarification',
+        kind: 'image',
+        missing: ['subject'],
+        recommended: 'image-portrait',
+        presets: [],
+      },
+    },
+    toolName: 'agnes_studio',
+    __ctx: {},
+  });
+
+  assert.equal(flattenText(tree), '');
+});

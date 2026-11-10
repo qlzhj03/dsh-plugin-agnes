@@ -8,7 +8,7 @@ function provider(overrides = {}) {
     apiKeyEnv: 'AGNES_API_KEY',
     api: 'openai-completions',
     baseURL: 'https://api.agnes-ai.cn/v1',
-    models: [{ id: 'agnes-2.5-flash', name: 'Agnes 2.5 Flash' }],
+    models: [{ id: 'agnes-3.0-flash', name: 'Agnes 3.0 Flash' }],
     ...overrides,
   };
 }
@@ -59,7 +59,7 @@ test('finds the Agnes provider and reports credential readiness', async () => {
   assert.equal(view.provider.id, 'agnes');
   assert.equal(view.provider.baseUrl, 'https://api.agnes-ai.cn/v1');
   assert.equal(view.provider.apiKeyEnv, 'AGNES_API_KEY');
-  assert.deepEqual(view.provider.models, ['agnes-2.5-flash']);
+  assert.deepEqual(view.provider.models, ['agnes-3.0-flash']);
   assert.equal(view.key.configured, true);
   assert.deepEqual(credentials.resolved, []);
 });
@@ -93,7 +93,9 @@ test('creates an Agnes provider with the shared DSH credential reference', async
   assert.equal(op.value.apiKeyEnv, 'AGNES_API_KEY');
   assert.equal(op.value.api, 'openai-completions');
   assert.equal(op.value.displayName, 'Agnes');
-  assert.deepEqual(op.value.models.map((model) => model.id), ['agnes-2.5-flash']);
+  assert.deepEqual(op.value.models.map((model) => model.id), ['agnes-3.0-flash']);
+  assert.equal(op.value.models[0].contextWindow, 512_000);
+  assert.equal(op.value.models[0].maxTokens, 65_536);
 
   const again = await models.ensureProvider(DEFAULT_PROVIDER_ID);
   assert.equal(again.created, false);

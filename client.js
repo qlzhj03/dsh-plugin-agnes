@@ -81,17 +81,20 @@ window.__ModuleLoader__.load({
         'setup.refresh': 'Refresh status',
         'settings.title': 'DSH model connection',
         'settings.connection': 'DSH model provider',
-        'settings.provider': 'Provider',
-        'settings.providerHint': 'The provider owns the Base URL and the API key credential.',
         'settings.baseUrl': 'Base URL',
         'settings.providerId': 'Provider ID',
         'settings.apiKeyRef': 'Credential reference',
         'settings.keyManaged': 'The API key is managed by DSH Models and is never returned to this page.',
         'settings.models': 'Model mapping',
-        'settings.modelHint': 'These model IDs are sent to the provider Base URL.',
+        'settings.modelHint': 'Models are fetched live from the current provider and grouped into text, image, and video by model ID.',
         'settings.textModel': 'Text model',
         'settings.imageModel': 'Image model',
         'settings.videoModel': 'Video model',
+        'settings.modelsLoading': 'Loading models…',
+        'settings.modelsError': 'Could not load the provider model list:',
+        'settings.refreshModels': 'Refresh models',
+        'settings.selectModel': 'Select a model',
+        'settings.modelRequired': 'Choose a text, image, and video model before saving.',
         'settings.storage': 'History storage',
         'settings.docs': 'Agnes API documentation',
         'settings.saved': 'Settings saved.',
@@ -181,17 +184,20 @@ window.__ModuleLoader__.load({
         'setup.refresh': '刷新状态',
         'settings.title': 'DSH 模型连接',
         'settings.connection': 'DSH 模型提供商',
-        'settings.provider': '提供商',
-        'settings.providerHint': 'Base URL 和 API Key 凭证都归属该提供商。',
         'settings.baseUrl': 'Base URL',
         'settings.providerId': '提供商 ID',
         'settings.apiKeyRef': '凭证引用',
         'settings.keyManaged': 'API Key 由 DSH 模型设置管理，不会回传到当前页面。',
         'settings.models': '模型映射',
-        'settings.modelHint': '这些模型 ID 会发送到提供商的 Base URL。',
+        'settings.modelHint': '模型列表从当前供应商实时获取，并按模型 ID 自动归类为文本、图片和视频。',
         'settings.textModel': '文本模型',
         'settings.imageModel': '图片模型',
         'settings.videoModel': '视频模型',
+        'settings.modelsLoading': '正在获取模型…',
+        'settings.modelsError': '无法获取供应商模型列表：',
+        'settings.refreshModels': '刷新模型列表',
+        'settings.selectModel': '请选择模型',
+        'settings.modelRequired': '请先为文本、图片和视频选择模型。',
         'settings.storage': '历史存储位置',
         'settings.docs': 'Agnes API 文档',
         'settings.saved': '设置已保存。',
@@ -412,6 +418,32 @@ window.__ModuleLoader__.load({
         children);
     }
 
+    function modelGroupFor(id) {
+      const value = String(id || '').toLowerCase();
+      if (value.includes('image')) return 'image';
+      if (value.includes('video')) return 'video';
+      return 'text';
+    }
+
+    function modelOptionLabel(model) {
+      if (model?.name && model.name !== model.id) return `${model.name} · ${model.id}`;
+      return model?.id || '';
+    }
+
+    function ModelSelect({ t, value, models, busy, disabled, onChange }) {
+      const options = Array.isArray(models) ? models.slice() : [];
+      if (value !== '' && !options.some((model) => model.id === value)) options.unshift({ id: value });
+      return h('select', {
+        className: 'as-select',
+        value,
+        onChange: (event) => onChange(event.target.value),
+        disabled: disabled || busy,
+      },
+      options.length === 0
+        ? h('option', { value: '' }, t('settings.selectModel'))
+        : options.map((model) => h('option', { key: model.id, value: model.id }, modelOptionLabel(model))));
+    }
+
     function MediaView({ record, tool = false }) {
       const src = record.mediaUrl || record.remoteUrl;
       if (record.kind === 'video' && src) {
@@ -498,6 +530,7 @@ window.__ModuleLoader__.load({
           : '';
         return h('div', { className: 'as-root' }, h(Style), h('div', { className: 'as-tool' }, h('pre', { className: 'as-tool-text' }, message)));
       }
+      if (meta.action === 'clarification') return null;
       if (meta.action === 'history') {
         return h('div', { className: 'as-root' }, h(Style), h('div', { className: 'as-tool' },
           h('div', { className: 'as-tool-head' }, h(Logo, { size: 20 }), h('span', { className: 'as-tool-title' }, t('tool.history')), h('span', { className: 'as-chip' }, String(meta.total || 0))),
@@ -617,36 +650,72 @@ window.__ModuleLoader__.load({
     }
 
     function SettingsPanel({ t, config, onConfig, onSetup, setupBusy, setupError, setupNotice }) {
-      const [providerId, setProviderId] = React.useState(config?.config?.providerId || '');
       const [textModel, setTextModel] = React.useState(config?.config?.textModel || '');
       const [imageModel, setImageModel] = React.useState(config?.config?.imageModel || '');
       const [videoModel, setVideoModel] = React.useState(config?.config?.videoModel || '');
+      const [models, setModels] = React.useState([]);
+      const [modelsBusy, setModelsBusy] = React.useState(false);
+      const [modelsError, setModelsError] = React.useState('');
+      const [modelsVersion, setModelsVersion] = React.useState(0);
       const [busy, setBusy] = React.useState(false);
       const [error, setError] = React.useState('');
       const [notice, setNotice] = React.useState('');
 
       const connection = config?.connection || {};
       const selected = connection.provider || null;
-      const providers = Array.isArray(connection.providers) ? connection.providers.filter((provider) => provider.agnes === true) : [];
       const reason = connection.reason;
       const canCreate = config?.setup?.canCreate === true;
+      const canLoadModels = config?.configured === true;
+      const providerKey = selected?.id || config?.config?.providerId || '';
 
       React.useEffect(() => {
-        setProviderId(config?.config?.providerId || selected?.id || '');
         setTextModel(config?.config?.textModel || '');
         setImageModel(config?.config?.imageModel || '');
         setVideoModel(config?.config?.videoModel || '');
       }, [config, selected?.id]);
 
+      const loadModels = React.useCallback(async () => {
+        setModelsBusy(true);
+        setModelsError('');
+        try {
+          const result = await api('/models');
+          setModels(Array.isArray(result?.models) ? result.models : []);
+        } catch (failure) {
+          setModels([]);
+          setModelsError(failure instanceof Error ? failure.message : String(failure));
+        } finally {
+          setModelsBusy(false);
+        }
+      }, []);
+
+      React.useEffect(() => {
+        if (!canLoadModels) {
+          setModels([]);
+          setModelsError('');
+          return;
+        }
+        loadModels();
+      }, [canLoadModels, providerKey, modelsVersion, loadModels]);
+
+      const groupedModels = React.useMemo(() => {
+        const groups = { text: [], image: [], video: [] };
+        for (const model of models) {
+          if (typeof model?.id === 'string' && model.id !== '') groups[modelGroupFor(model.id)].push(model);
+        }
+        return groups;
+      }, [models]);
+
       const save = async (event) => {
         event.preventDefault();
+        if (textModel === '' || imageModel === '' || videoModel === '') {
+          setError(t('settings.modelRequired'));
+          return;
+        }
         setBusy(true);
         setError('');
         setNotice('');
         try {
-          const payload = { textModel, imageModel, videoModel };
-          if (providerId !== '') payload.providerId = providerId;
-          await api('/config', { method: 'POST', body: JSON.stringify(payload) });
+          await api('/config', { method: 'POST', body: JSON.stringify({ textModel, imageModel, videoModel }) });
           setNotice(t('settings.saved'));
           await onConfig();
         } catch (failure) {
@@ -693,14 +762,20 @@ window.__ModuleLoader__.load({
             h(Button, { small: true, disabled: busy || setupBusy, onClick: onConfig }, t('setup.refresh')))),
         h('form', { className: 'as-settings-block', onSubmit: save },
           h('h3', { className: 'as-settings-title' }, t('settings.models')),
-          providers.length > 0 ? h(Field, { label: t('settings.provider'), hint: t('settings.providerHint') },
-            h('select', { className: 'as-select', value: providerId, onChange: (event) => setProviderId(event.target.value), disabled: busy },
-              providers.map((provider) => h('option', { key: provider.id, value: provider.id }, `${provider.displayName || provider.id} · ${provider.id}`)))) : null,
           h('div', { className: 'as-grid' },
-            h(Field, { label: t('settings.textModel') }, h('input', { className: 'as-input', value: textModel, onChange: (event) => setTextModel(event.target.value), disabled: busy })),
-            h(Field, { label: t('settings.imageModel') }, h('input', { className: 'as-input', value: imageModel, onChange: (event) => setImageModel(event.target.value), disabled: busy })),
-            h(Field, { label: t('settings.videoModel') }, h('input', { className: 'as-input', value: videoModel, onChange: (event) => setVideoModel(event.target.value), disabled: busy }))),
-          h('div', { className: 'as-note' }, t('settings.modelHint'), ' ', t('settings.advanced')),
+            h(Field, { label: t('settings.textModel') },
+              h(ModelSelect, { t, value: textModel, models: groupedModels.text, busy: modelsBusy, disabled: busy, onChange: setTextModel })),
+            h(Field, { label: t('settings.imageModel') },
+              h(ModelSelect, { t, value: imageModel, models: groupedModels.image, busy: modelsBusy, disabled: busy, onChange: setImageModel })),
+            h(Field, { label: t('settings.videoModel') },
+              h(ModelSelect, { t, value: videoModel, models: groupedModels.video, busy: modelsBusy, disabled: busy, onChange: setVideoModel }))),
+          h('div', { className: 'as-actions' },
+            h('span', { className: 'as-note' }, t('settings.modelHint')),
+            h(Button, { small: true, disabled: busy || modelsBusy || !canLoadModels, onClick: () => setModelsVersion((value) => value + 1) },
+              modelsBusy ? h(Spinner) : null,
+              modelsBusy ? t('settings.modelsLoading') : t('settings.refreshModels'))),
+          h(ErrorText, null, modelsError ? `${t('settings.modelsError')} ${modelsError}` : ''),
+          h('div', { className: 'as-note' }, t('settings.advanced')),
           h('div', { className: 'as-actions' }, h(Button, { type: 'submit', primary: true, disabled: busy }, busy ? h(Spinner) : null, busy ? t('common.saving') : t('common.save')))));
     }
 

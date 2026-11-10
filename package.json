@@ -4,6 +4,11 @@
   "private": true,
   "description": "Agnes text, image, and video generation with in-chat previews and a persistent media history.",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qlzhj03/dsh-plugin-agnes.git"
+  },
+  "homepage": "https://github.com/qlzhj03/dsh-plugin-agnes#readme",
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",

@@ -5,7 +5,13 @@ import { DshModelProviders, DEFAULT_PROVIDER_ID } from './lib/dsh-models.js';
 
 const TOOL_NAME = 'agnes_studio';
 const ROUTE_PREFIX = '/api/agnes-studio';
-const TOOL_GUIDANCE = 'Use the agnes_studio tool automatically when the user asks to create, generate, draw, edit, or animate an image or video, even without naming Agnes or this tool. Call it immediately with action: "image" or action: "video" instead of only describing the result. Also use it when the user explicitly asks Agnes to write standalone text or asks to see previous Agnes generations (action: "history"). Do not call it for ordinary conversation, general questions, or normal text replies.';
+const TOOL_GUIDANCE = [
+  'Use the agnes_studio tool automatically when the user asks to create, generate, draw, edit, or animate an image or video, even without naming Agnes or this tool. Call it with action: "image" or action: "video" instead of only describing the result.',
+  'Do not invent a missing subject. When an image or video request only gives a format or mood (for example "画个图", "做个海报", "来段视频", or "generate an image"), call the tool with the user\'s wording: it returns a clarification result with suggested presets instead of generating. That result has no separate UI card; do not describe a card. Ask only for the missing subject or edit instruction through ask_user_question (the native question UI), mention the recommended specs in the question, use them unless the user wants to change them, and wait for the answer.',
+  'When the subject is clear but aspect ratio, size, duration, or resolution is missing, choose the preset that matches the intended use, generate immediately, and mention the chosen settings in one short line.',
+  'If the user explicitly delegates the choice ("你决定", "按推荐", "随便"), choose a concrete subject and the recommended preset, then call again. Do not ask the same question twice.',
+  'Also use the tool when the user explicitly asks Agnes to write standalone text or asks to see previous Agnes generations (action: "history"). Do not call it for ordinary conversation, general questions, or normal text replies.',
+].join(' ');
 
 export const inject = ['tools', 'systemPrompt', 'webServer', 'settings', 'credentials'];
 
@@ -81,19 +87,49 @@ async function configView(studio, models) {
   };
 }
 
+function presetSettings(preset, kind) {
+  return kind === 'image'
+    ? [preset?.ratio, preset?.imageSize].filter(Boolean).join(' · ')
+    : [preset?.aspectRatio, preset?.seconds ? `${preset.seconds}s` : '', preset?.resolution].filter(Boolean).join(' · ');
+}
+
 function resultSummary(value) {
   if (value?.action === 'history') {
     const items = Array.isArray(value.items) ? value.items : [];
     const lines = items.map((item) => `- ${item.kind} · ${item.status} · ${item.title || item.prompt || item.id}${item.mediaUrl ? ` · ${item.mediaUrl}` : ''}`);
     return [`Agnes history · ${value.total ?? items.length} item(s)`, ...lines].join('\n');
   }
+  if (value?.action === 'clarification') {
+    const presets = Array.isArray(value.presets) ? value.presets : [];
+    const recommended = presets.find((preset) => preset.id === value.recommended);
+    const missing = Array.isArray(value.missing) && value.missing.includes('instruction') ? 'edit instruction' : 'subject';
+    return [
+      `Agnes needs more detail before generating ${value.kind === 'image' ? 'an image' : 'a video'}.`,
+      `Ask the user: ${value.question ?? ''}`,
+      'Suggested presets:',
+      ...presets.map((preset) => `- ${preset.label || preset.id}: ${presetSettings(preset, value.kind)}${preset.hint ? ` — ${preset.hint}` : ''}`),
+      recommended ? `Recommended: ${recommended.label || recommended.id} (${presetSettings(recommended, value.kind)})` : '',
+      `Mention the recommended settings in the native question. Wait for the user to choose or add the missing ${missing}. Do not claim anything was generated.`,
+    ].filter(Boolean).join('\n');
+  }
   if (value?.kind === 'text') return value.text ?? '';
-  if (value?.kind === 'image') return `Generated image: ${value.mediaUrl || value.remoteUrl || '(no URL)'}\nPrompt: ${value.prompt ?? ''}`;
-  if (value?.kind === 'video') return `Generated video: ${value.mediaUrl || value.remoteUrl || '(no URL)'}\nPrompt: ${value.prompt ?? ''}`;
+  if (value?.kind === 'image') return `Generated image: ${value.mediaUrl || value.remoteUrl || '(no URL)'}\nPrompt: ${value.prompt ?? ''}\nSettings: ${presetSettings(value, 'image')}`;
+  if (value?.kind === 'video') return `Generated video: ${value.mediaUrl || value.remoteUrl || '(no URL)'}\nPrompt: ${value.prompt ?? ''}\nSettings: ${presetSettings(value, 'video')}`;
   return JSON.stringify(value);
 }
 
 function toolMeta(_args, value) {
+  if (value?.action === 'clarification') {
+    return {
+      studio: 'agnes',
+      action: 'clarification',
+      kind: value.kind,
+      missing: value.missing ?? ['subject'],
+      question: value.question ?? '',
+      recommended: value.recommended ?? '',
+      presets: value.presets ?? [],
+    };
+  }
   if (value?.action === 'history') {
     return {
       studio: 'agnes',
@@ -113,7 +149,7 @@ function toolMeta(_args, value) {
 function makeTool(studio) {
   return {
     name: TOOL_NAME,
-    description: 'Generate text, images, or videos with Agnes AI and browse the user\'s saved generation history. Image and video results render inline in the conversation, and all results are saved automatically.',
+    description: 'Generate text, images, or videos with Agnes AI and browse the user\'s saved generation history. An image or video request without a concrete subject returns a clarification with suggested presets instead of generating. Image and video results render inline in the conversation, and all results are saved automatically.',
     parameters: {
       action: {
         type: 'string',
@@ -123,7 +159,7 @@ function makeTool(studio) {
       },
       prompt: {
         type: 'string',
-        description: 'Required for text, image, and video. Write a detailed production-ready prompt.',
+        description: 'Required for text, image, and video. For image/video, state the concrete subject and intended look. If the user\'s request is vague, pass their wording unchanged; the tool returns a clarification instead of generating.',
       },
       system: {
         type: 'string',
@@ -135,12 +171,12 @@ function makeTool(studio) {
       },
       imageSize: {
         type: 'string',
-        description: 'Image output tier for action=image: 1K, 2K, 3K, or 4K. Default 2K.',
+        description: 'Image detail tier: 1K draft, 2K standard, 3K/4K detail or print. Default 2K.',
       },
       ratio: {
         type: 'string',
         enum: ['1:1', '3:4', '4:3', '16:9', '9:16', '2:3', '3:2', '21:9'],
-        description: 'Image aspect ratio. Default 16:9.',
+        description: 'Image aspect ratio by use: 1:1 social/product, 3:4 portrait/poster, 16:9 scene/cover, 9:16 phone/story. Default 16:9.',
       },
       images: {
         type: 'array',
@@ -154,17 +190,17 @@ function makeTool(studio) {
       },
       seconds: {
         type: 'string',
-        description: 'Video duration from "4" to "12" seconds. Default "5".',
+        description: 'Video duration from "4" to "12" seconds: 5s for one shot, 8–12s for action or story. Default "5".',
       },
       resolution: {
         type: 'string',
         enum: ['720P', '1080P', '1K', '2K'],
-        description: 'Video resolution tier. Default 720P.',
+        description: 'Video resolution tier: 720P draft, 1080P final, 1K/2K high-resolution. Default 720P.',
       },
       aspectRatio: {
         type: 'string',
         enum: ['16:9', '9:16', '1:1', '4:3', '3:4', '21:9'],
-        description: 'Video aspect ratio. Default 16:9.',
+        description: 'Video aspect ratio: 16:9 landscape, 9:16 vertical, 1:1 product/social. Default 16:9.',
       },
       firstFrame: {
         type: 'string',
@@ -234,6 +270,11 @@ function mountRoutes(ctx, studio, models) {
 
       if (path === '/config' && method === 'GET') {
         sendJson(res, 200, await configView(studio, models));
+        return;
+      }
+
+      if (path === '/models' && method === 'GET') {
+        sendJson(res, 200, { ok: true, ...(await studio.listModels()) });
         return;
       }
 
