@@ -3,7 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { assessGenerationBrief } from '../lib/brief.js';
+import { assessGenerationBrief, VIDEO_PRESETS } from '../lib/brief.js';
 import { AgnesStudio } from '../lib/studio.js';
 
 test('asks for a subject when an image or video brief is only a format or mood', () => {
@@ -20,6 +20,7 @@ test('asks for a subject when an image or video brief is only a format or mood',
   assert.equal(video.kind, 'video');
   assert.equal(video.recommended, 'video-square');
   assert.ok(video.presets.some((preset) => preset.id === 'video-square'));
+  assert.ok(video.presets.every((preset) => preset.resolution === '720P'));
 });
 
 test('keeps concrete or referenced briefs on the normal generation path', () => {

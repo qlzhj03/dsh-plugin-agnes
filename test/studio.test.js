@@ -93,13 +93,16 @@ test('AgnesStudio generates text, image, and video and persists history/media', 
       prompt: 'A silver car on a rainy neon street',
       videoMode: 'text',
       seconds: '5',
-      resolution: '720P',
+      resolution: '1080P',
       aspectRatio: '16:9',
       source: 'test',
     });
     assert.equal(video.kind, 'video');
     assert.match(video.mediaUrl, /^\/api\/agnes-studio\/media\/vid_.+\.mp4$/);
     assert.equal(video.seconds, '5');
+    assert.equal(video.resolution, '720P');
+    const videoCall = calls.find((call) => call.url.endsWith('/videos') && call.init.method === 'POST');
+    assert.equal(JSON.parse(videoCall.init.body).size, '720P');
 
     const history = await studio.listHistory();
     assert.equal(history.total, 3);
@@ -141,8 +144,13 @@ test('AgnesStudio validates configuration and reports API failures', async () =>
     );
     await assert.rejects(studio.saveConfig({ baseUrl: 'file:///tmp/nope' }), /http or https/);
     const history = await studio.listHistory();
-    assert.equal(history.items[0].status, 'failed');
-    assert.match(history.items[0].error, /API key is not configured/);
+    assert.equal(history.total, 0);
+    assert.deepEqual(history.counts, { all: 0, text: 0, image: 0, video: 0 });
+
+    const stored = await studio.history();
+    assert.equal(stored.length, 1);
+    assert.equal(stored[0].status, 'failed');
+    assert.match(stored[0].error, /API key is not configured/);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

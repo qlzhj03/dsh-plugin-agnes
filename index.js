@@ -9,7 +9,7 @@ const API_KEYS_URL = 'https://platform.agnes-ai.cn/settings/apiKeys';
 const TOOL_GUIDANCE = [
   'Use the agnes_studio tool automatically when the user asks to create, generate, draw, edit, or animate an image or video, even without naming Agnes or this tool. Call it with action: "image" or action: "video" instead of only describing the result.',
   'Do not invent a missing subject. When an image or video request only gives a format or mood (for example "画个图", "做个海报", "来段视频", or "generate an image"), call the tool with the user\'s wording: it returns a clarification result with suggested presets instead of generating. That result has no separate UI card; do not describe a card. Ask only for the missing subject or edit instruction through ask_user_question (the native question UI), mention the recommended specs in the question, use them unless the user wants to change them, and wait for the answer.',
-  'When the subject is clear but aspect ratio, size, duration, or resolution is missing, choose the preset that matches the intended use, generate immediately, and mention the chosen settings in one short line.',
+  'When the subject is clear but aspect ratio, image detail, or duration is missing, choose the preset that matches the intended use, generate immediately, and mention the chosen settings in one short line.',
   'If the user explicitly delegates the choice ("你决定", "按推荐", "随便"), choose a concrete subject and the recommended preset, then call again. Do not ask the same question twice.',
   'Also use the tool when the user explicitly asks Agnes to write standalone text or asks to see previous Agnes generations (action: "history"). Do not call it for ordinary conversation, general questions, or normal text replies.',
 ].join(' ');
@@ -196,8 +196,8 @@ function makeTool(studio) {
       },
       resolution: {
         type: 'string',
-        enum: ['720P', '1080P', '1K', '2K'],
-        description: 'Video resolution tier: 720P draft, 1080P final, 1K/2K high-resolution. Default 720P.',
+        enum: ['720P'],
+        description: 'Video resolution. Agnes video currently supports 720P only.',
       },
       aspectRatio: {
         type: 'string',

@@ -87,10 +87,12 @@ The plugin adds model-facing guidance so image and video requests invoke `agnes_
 When a request names only a format, style, or usage but no concrete subject (for example “draw an image”, “make a poster”, or “make a video”), the tool does not invent a subject and shows no extra card. It asks through the native question UI at the bottom of the conversation:
 
 - Images: square 1:1, portrait 3:4, landscape 16:9, and phone 9:16 at 2K.
-- Video: vertical 9:16, landscape 16:9, and square 1:1 at 5 seconds; 720P for previews and 1080P for landscape finals.
+- Video: vertical 9:16, landscape 16:9, and square 1:1 at 5 seconds and 720P (the current Agnes video API supports 720P only).
 
 Recommended settings are included with the question. Reply with the subject and usage, or say “use the recommendation”. If the subject is clear but format details are missing, the plugin picks a preset that matches the intended use, generates immediately, and states the settings in the result.
 
 ## Storage
+
+Failed records without a returned image/video link are hidden from the **Agnes works** page, but remain in the local history file for diagnostics.
 
 History and media live under `$DSH_PROFILE_DIR/agnes-studio/` when the Host exposes that variable, otherwise `~/.dsh/agnes-studio/`. The history file is capped at the newest 500 records.
